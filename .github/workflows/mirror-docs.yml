@@ -92,6 +92,16 @@ jobs:
           PY
 
           # A note for humans browsing the folder.
+          cat > docs/architecture/SYNCED-FROM.txt <<EOF
+          source:  ${{ github.repository }}
+          commit:  ${{ github.sha }}
+          synced:  $(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+          Every repository mirroring this knowledge base should show the same
+          commit here. A different value means that clone is behind — run
+          \`git pull\` before trusting a disagreement between copies.
+          EOF
+
           cat > docs/architecture/DO-NOT-EDIT.md <<'EOF'
           # Generated — do not edit
 

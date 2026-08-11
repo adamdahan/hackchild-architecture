@@ -67,6 +67,16 @@ see half the system.
 - **Never edit anything under `docs/architecture/`.** It is generated and
   overwritten on every sync. Corrections belong in the source repository.
 
+### If you find the same document in two repositories
+
+They are mirrors of one source, not two documents. Identical copies are the
+normal case. **If they disagree, one clone is simply out of date** — check
+`docs/architecture/SYNCED-FROM.txt` in each; the one with the older `commit` is
+stale.
+
+Resolve against the code, answer once, and tell the user which clone needs a
+`git pull`. Do not present it as a contradiction in the documentation.
+
 ### If nothing matches
 
 Say plainly that no document covers it, then answer from the code you can see —
