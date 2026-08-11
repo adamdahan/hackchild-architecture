@@ -30,6 +30,14 @@ jobs:
           node tools/propose-repair.mjs --owner ${{ github.repository_owner }}
           echo "code=$?" >> "$GITHUB_OUTPUT"
 
+      - name: Let the agent rewrite the affected prose
+        if: steps.repair.outputs.code == '10' && env.ANTHROPIC_API_KEY != ''
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          npm install --no-save --silent @anthropic-ai/sdk
+          node tools/agent-repair.mjs
+
       - name: Open the repair pull request
         if: steps.repair.outputs.code == '10'
         env:
