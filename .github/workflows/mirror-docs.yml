@@ -15,6 +15,7 @@ on:
       - 'docs/**'
       - 'README.md'
       - '.github/skills/**'
+      - '.github/copilot-instructions.md'
   workflow_dispatch:
 
 jobs:
@@ -61,6 +62,12 @@ jobs:
           rm -rf .github/skills/architecture-docs
           mkdir -p .github/skills/architecture-docs
           cp ../source/.github/skills/*/SKILL.md .github/skills/architecture-docs/SKILL.md
+
+          # Copilot reads .github/copilot-instructions.md on every Chat request
+          # in this workspace — no slash command, no discovery step. This is the
+          # reliable hook; the skill above is the nicer one where supported.
+          mkdir -p .github
+          cp ../source/.github/copilot-instructions.md .github/copilot-instructions.md
 
           # The source skill says "the root of this repository". In the mirror
           # that is wrong — rewrite the paths to the mirrored location.
@@ -114,7 +121,7 @@ jobs:
           git config user.name  "docs-mirror"
           git config user.email "bot@users.noreply.github.com"
           git checkout -B "$BRANCH"
-          git add -A docs/architecture .github/skills/architecture-docs
+          git add -A docs/architecture .github/skills/architecture-docs .github/copilot-instructions.md
           git commit -m "docs: sync architecture documents and skill"
           git push -f -u origin "$BRANCH"
 
