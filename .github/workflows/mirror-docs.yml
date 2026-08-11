@@ -62,11 +62,11 @@ jobs:
           import pathlib, re
           p = pathlib.Path(".github/skills/architecture-docs/SKILL.md")
           s = p.read_text()
-          s = s.replace("README.md at the repo root", "docs/architecture/README.md")
-          s = s.replace("`README.md` at the repo root", "`docs/architecture/README.md`")
-          s = s.replace("Read `README.md`", "Read `docs/architecture/README.md`")
-          s = re.sub(r"\bflows/", "docs/architecture/flows/", s)
-          s = re.sub(r"\bmechanisms/", "docs/architecture/mechanisms/", s)
+          # paths are relative to the knowledge base at the source; in the
+          # mirror everything sits under docs/architecture/
+          s = s.replace("index/manifest.tsv", "docs/architecture/manifest.tsv")
+          s = re.sub(r"(?<![\w/])docs/(?!architecture)", "docs/architecture/", s)
+          s = s.replace("node tools/build-index.mjs", "(regenerate at the source repository)")
           s = s.rstrip() + (
               "\n\n---\n\n"
               "## This is a mirrored copy\n\n"
