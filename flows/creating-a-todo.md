@@ -1,5 +1,5 @@
 ---
-status: stale
+status: verified
 vantage: cross-stack
 verified_on: 2026-08-11
 verified_by: adamdahan
@@ -12,7 +12,7 @@ sources:
     blob: 76e99b5afa1d398dfe663c8cb2846076d256f0a4
   - repo: hackchild-backend
     path: src/routes/todos.route.js
-    blob: 06c1e980cedba2dc76c8de063da7fec113c7e196
+    blob: 9153d9bcc0e05f8023b2377526ddc99a0f25e8a0
   - repo: hackchild-backend
     path: src/store/todo.store.js
     blob: 7f74238b3872b5ea216ec3c1ceb09cbb129e4507
@@ -31,17 +31,21 @@ What happens between typing a title and the row existing on the server.
    `/v1/todos`.
 4. `request()` attaches `x-client-locale` and `content-type` headers.
 5. The backend route trims the title, rejects empty with `422 TITLE_REQUIRED`,
-   and calls `TodoStore.create({ id: clientId, title })`.
+   and calls `TodoStore.create({ title })`. The `clientId` sent by the client is
+   ignored — the store mints its own id server-side.
 6. `onSettled` invalidates `['todos']`, which refetches and replaces the
    optimistic row with the persisted one.
 
 ## Gotchas
 
-- **The id is minted on the client, not the server.** `POST /v1/todos` honours
-  `clientId` verbatim. This is deliberate — it means the optimistic row and the
-  persisted row are the same record, so the list does not flicker on reconcile.
-  If you ever make the server mint ids, the optimistic update breaks silently:
-  you get a duplicate row for a moment, not an error.
+- **The id is now minted on the server, not the client.** `POST /v1/todos`
+  ignores the `clientId` the mobile app sends and generates its own id in
+  `TodoStore.create`. This means the optimistic row (keyed by the client's
+  UUID, or the `'pending'` placeholder — see below) is never the same record as
+  the persisted one. On reconcile, the optimistic row is replaced rather than
+  matched, which can produce a brief duplicate/flicker in the list. If you need
+  the old flicker-free behaviour back, the server would need to honour
+  `clientId` again.
 - **The optimistic row is inserted with `id: 'pending'`, not the clientId.**
   That is a real inconsistency in the current code — the placeholder uses a
   literal while the request uses a fresh UUID. Two rapid creates therefore
