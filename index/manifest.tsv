@@ -3,4 +3,4 @@
 # path  kind  domain  repos  status  title  keywords  summary
 docs/platform/event-bus.md	mechanism	platform	hackchild-backend	verified	The Event Bus	event bus, publish, register, canHandle, handler, microtask, silently dropped, adding a handler	How a published event finds its handler.
 docs/todos/completing-a-todo.md	flow	todos	hackchild-backend,hackchild-mobile	verified	Completing a Todo	complete todo, PATCH, idempotent, todo.completed, streak, fire and forget, 404 NOT_FOUND	Tapping a row marks it done and, asynchronously, advances the completion streak.
-docs/todos/creating-a-todo.md	flow	todos	hackchild-backend,hackchild-mobile	verified	Creating a Todo	create todo, optimistic update, clientId, TITLE_REQUIRED, react-query, onMutate, TodoStore.create, id minting	What happens between typing a title and the row existing on the server.
+docs/todos/creating-a-todo.md	flow	todos	hackchild-backend,hackchild-mobile	needs-review	Creating a Todo	create todo, optimistic update, clientId, TITLE_REQUIRED, react-query, onMutate, TodoStore.create, id minting	What happens between typing a title and the row existing on the server.
