@@ -1,5 +1,5 @@
 ---
-status: stale
+status: verified
 vantage: cross-stack
 verified_on: 2026-08-11
 verified_by: adamdahan
@@ -12,7 +12,7 @@ sources:
     blob: 76e99b5afa1d398dfe663c8cb2846076d256f0a4
   - repo: hackchild-backend
     path: src/routes/todos.route.js
-    blob: 06c1e980cedba2dc76c8de063da7fec113c7e196
+    blob: 9153d9bcc0e05f8023b2377526ddc99a0f25e8a0
   - repo: hackchild-backend
     path: src/store/todo.store.js
     blob: 7f74238b3872b5ea216ec3c1ceb09cbb129e4507
