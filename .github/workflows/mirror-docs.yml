@@ -125,15 +125,17 @@ jobs:
           git commit -m "docs: sync architecture documents and skill"
           git push -f -u origin "$BRANCH"
 
-          EXISTING=$(gh pr list --repo ${{ github.repository_owner }}/${{ matrix.target }} \
-            --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
-
-          if [ -n "$EXISTING" ]; then
-            echo "updated existing mirror PR #$EXISTING"
-          else
-            gh pr create \
+          # `gh pr list --head` can lag a force-push, so treat "already exists"
+          # as success rather than racing against eventual consistency.
+          if ! gh pr create \
               --repo ${{ github.repository_owner }}/${{ matrix.target }} \
               --base main --head "$BRANCH" \
               --title "Sync architecture documents" \
-              --body "$(printf 'Mirrored from the architecture repository — this PR updates in place as documents change.\n\nOnce merged, anyone who clones this repository gets the documents and the lookup skill with no setup.\n\nGenerated. Review is a formality.\n')"
+              --body "$(printf 'Mirrored from the architecture repository — this PR updates in place as documents change.\n\nOnce merged, anyone who clones this repository gets the documents, the Copilot instructions, and the lookup skill with no setup.\n\nGenerated. Review is a formality.\n')" 2> pr-err.txt; then
+            if grep -q "already exists" pr-err.txt; then
+              echo "mirror PR already open — branch updated in place"
+            else
+              cat pr-err.txt >&2
+              exit 1
+            fi
           fi
