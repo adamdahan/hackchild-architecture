@@ -37,8 +37,25 @@ see half the system.
    - `observed` — written from one side of the stack only. Treat claims about
      the other side as inference.
 
-4. **Answer, and say where it came from.** Distinguish what came from a document
-   from what came from code you can see.
+4. **Open your answer by citing the source, on its own line, before anything
+   else.** Exactly this shape:
+
+   ```
+   📄 docs/architecture/todos/creating-a-todo.md · status: verified · cross-stack
+   ```
+
+   If no document matched, say so just as plainly:
+
+   ```
+   📄 no matching document — answering from code in this repository only
+   ```
+
+   This is not decoration. A reader needs to know whether they are getting a
+   written analysis of both repositories or a guess from the half of the system
+   that happens to be open, and they should not have to infer it from tone.
+
+5. **Then answer**, distinguishing what came from the document from what came
+   from code you can see.
 
 ### Rules
 
