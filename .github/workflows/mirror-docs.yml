@@ -1,0 +1,117 @@
+name: mirror-docs
+
+# Copies the documents AND the skill into each code repository, so a developer
+# who only ever clones `mobile` or `backend` still gets both — with nothing to
+# install and no second repository to know about.
+#
+# Requires a token with `contents: write` and `pull_requests: write` on the
+# target repos, stored as the MIRROR_TOKEN secret. GITHUB_TOKEN cannot reach
+# another repository.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'flows/**'
+      - 'mechanisms/**'
+      - 'README.md'
+      - '.github/skills/**'
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    if: ${{ secrets.MIRROR_TOKEN != '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [hackchild-mobile, hackchild-backend]
+    steps:
+      - name: Check out the knowledge base
+        uses: actions/checkout@v4
+        with:
+          path: source
+
+      - name: Check out the target repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/${{ matrix.target }}
+          token: ${{ secrets.MIRROR_TOKEN }}
+          path: target
+
+      - name: Copy documents and skill into the target
+        run: |
+          set -euo pipefail
+          cd target
+
+          # Documents go somewhere a human would look, and somewhere an
+          # assistant can be pointed at.
+          rm -rf docs/architecture
+          mkdir -p docs/architecture
+          cp -R ../source/flows        docs/architecture/
+          cp -R ../source/mechanisms   docs/architecture/
+          cp    ../source/README.md    docs/architecture/README.md
+
+          # The skill travels with them, so it is present on first clone.
+          rm -rf .github/skills/architecture-docs
+          mkdir -p .github/skills/architecture-docs
+          cp ../source/.github/skills/*/SKILL.md .github/skills/architecture-docs/SKILL.md
+
+          # The source skill says "the root of this repository". In the mirror
+          # that is wrong — rewrite the paths to the mirrored location.
+          python3 - <<'PY'
+          import pathlib, re
+          p = pathlib.Path(".github/skills/architecture-docs/SKILL.md")
+          s = p.read_text()
+          s = s.replace("README.md at the repo root", "docs/architecture/README.md")
+          s = s.replace("`README.md` at the repo root", "`docs/architecture/README.md`")
+          s = s.replace("Read `README.md`", "Read `docs/architecture/README.md`")
+          s = re.sub(r"\bflows/", "docs/architecture/flows/", s)
+          s = re.sub(r"\bmechanisms/", "docs/architecture/mechanisms/", s)
+          s = s.rstrip() + (
+              "\n\n---\n\n"
+              "## This is a mirrored copy\n\n"
+              "These documents are generated from the architecture repository and are "
+              "**read-only here**. Never edit them in this repo — the next mirror run "
+              "overwrites them. Corrections go to the source repository, where the "
+              "fingerprint and review machinery lives.\n"
+          )
+          p.write_text(s)
+          PY
+
+          # A note for humans browsing the folder.
+          cat > docs/architecture/DO-NOT-EDIT.md <<'EOF'
+          # Generated — do not edit
+
+          Everything in this folder is mirrored from the architecture repository
+          on every merge. Edits here are silently overwritten.
+
+          To correct a document, change it at the source. That is where staleness
+          detection and review happen.
+          EOF
+
+      - name: Open a mirror pull request if anything changed
+        env:
+          GH_TOKEN: ${{ secrets.MIRROR_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd target
+
+          if git diff --quiet && git diff --cached --quiet && [ -z "$(git status --porcelain)" ]; then
+            echo "${{ matrix.target }} is already up to date"
+            exit 0
+          fi
+
+          BRANCH="docs/mirror-${{ github.run_id }}"
+          git config user.name  "docs-mirror"
+          git config user.email "bot@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add -A docs/architecture .github/skills/architecture-docs
+          git commit -m "docs: sync architecture documents and skill"
+          git push -u origin "$BRANCH"
+
+          gh pr create \
+            --repo ${{ github.repository_owner }}/${{ matrix.target }} \
+            --base main --head "$BRANCH" \
+            --title "Sync architecture documents" \
+            --body "$(printf 'Mirrored from the architecture repository.\n\nAfter this merges, anyone who clones this repository has the documents and the lookup skill with no setup.\n\nGenerated — review is a formality.\n')"
