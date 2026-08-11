@@ -108,16 +108,25 @@ jobs:
             exit 0
           fi
 
-          BRANCH="docs/mirror-${{ github.run_id }}"
+          # A stable branch, force-pushed. One open mirror PR per repo, updated
+          # in place — not a new PR every time a document changes.
+          BRANCH="docs/mirror"
           git config user.name  "docs-mirror"
           git config user.email "bot@users.noreply.github.com"
-          git checkout -b "$BRANCH"
+          git checkout -B "$BRANCH"
           git add -A docs/architecture .github/skills/architecture-docs
           git commit -m "docs: sync architecture documents and skill"
-          git push -u origin "$BRANCH"
+          git push -f -u origin "$BRANCH"
 
-          gh pr create \
-            --repo ${{ github.repository_owner }}/${{ matrix.target }} \
-            --base main --head "$BRANCH" \
-            --title "Sync architecture documents" \
-            --body "$(printf 'Mirrored from the architecture repository.\n\nAfter this merges, anyone who clones this repository has the documents and the lookup skill with no setup.\n\nGenerated — review is a formality.\n')"
+          EXISTING=$(gh pr list --repo ${{ github.repository_owner }}/${{ matrix.target }} \
+            --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+
+          if [ -n "$EXISTING" ]; then
+            echo "updated existing mirror PR #$EXISTING"
+          else
+            gh pr create \
+              --repo ${{ github.repository_owner }}/${{ matrix.target }} \
+              --base main --head "$BRANCH" \
+              --title "Sync architecture documents" \
+              --body "$(printf 'Mirrored from the architecture repository — this PR updates in place as documents change.\n\nOnce merged, anyone who clones this repository gets the documents and the lookup skill with no setup.\n\nGenerated. Review is a formality.\n')"
+          fi
