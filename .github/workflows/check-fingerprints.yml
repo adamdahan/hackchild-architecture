@@ -43,14 +43,20 @@ jobs:
             git push
           fi
 
-      - name: Open an issue for stale documents
+      - name: Open or update the stale-documents issue
         if: steps.check.outputs.exit != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh issue create \
-            --title "Stale documents detected" \
-            --body "$(printf 'The nightly fingerprint check found documents whose source code has changed.\n\n```\n%s\n```\n' "$(cat report.txt)")"
+          gh label create stale-docs --color B60205 --description "Documents whose sources have moved" 2>/dev/null || true
+          body=$(printf 'The fingerprint check found documents whose source code has changed.\n\n```\n%s\n```\n' "$(cat report.txt)")
+          existing=$(gh issue list --state open --label stale-docs --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue edit "$existing" --body "$body"
+            echo "updated existing issue #$existing"
+          else
+            gh issue create --title "Stale documents detected" --label stale-docs --body "$body"
+          fi
 
       - name: Fail the run so the badge goes red
         if: steps.check.outputs.exit != '0'
