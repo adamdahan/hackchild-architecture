@@ -1,5 +1,5 @@
 ---
-status: verified
+status: stale
 vantage: cross-stack
 verified_on: 2026-08-11
 verified_by: adamdahan
