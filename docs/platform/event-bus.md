@@ -1,5 +1,5 @@
 ---
-status: stale
+status: verified
 vantage: backend-only
 kind: mechanism
 domain: platform
@@ -9,7 +9,7 @@ verified_by: adamdahan
 sources:
   - repo: hackchild-backend
     path: src/events/bus.js
-    blob: 26615b3b3a0ede011360b31a804c803ee7b2cd48
+    blob: a26559b1f4ca31a86d1b4ea0d6ca839b7ce3e1d4
   - repo: hackchild-backend
     path: src/events/handlers/streak.handler.js
     blob: e7bcb149b11270aab9ad98649c0cfd1dff387d46
