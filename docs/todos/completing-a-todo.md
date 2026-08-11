@@ -12,7 +12,7 @@ sources:
     blob: 033d7bc549b7498c3781e9f6e192c30b1a5c2e13
   - repo: hackchild-backend
     path: src/routes/todos.route.js
-    blob: 9153d9bcc0e05f8023b2377526ddc99a0f25e8a0
+    blob: 77870bee996de3f4c9934c10943f707121449787
   - repo: hackchild-backend
     path: src/events/bus.js
     blob: a26559b1f4ca31a86d1b4ea0d6ca839b7ce3e1d4

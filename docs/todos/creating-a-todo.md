@@ -1,5 +1,5 @@
 ---
-status: needs-review
+status: verified
 vantage: cross-stack
 kind: flow
 domain: todos
@@ -15,7 +15,7 @@ sources:
     blob: 76e99b5afa1d398dfe663c8cb2846076d256f0a4
   - repo: hackchild-backend
     path: src/routes/todos.route.js
-    blob: 9153d9bcc0e05f8023b2377526ddc99a0f25e8a0
+    blob: 77870bee996de3f4c9934c10943f707121449787
   - repo: hackchild-backend
     path: src/store/todo.store.js
     blob: 7f74238b3872b5ea216ec3c1ceb09cbb129e4507
@@ -44,8 +44,7 @@ What happens between typing a title and the row existing on the server.
 - **The id is minted on the server, and the client's `clientId` is discarded.**
   The route parses only `title`. The optimistic row and the persisted row are
   therefore never the same record, so the list replaces rather than reconciles
-  and can flicker. A stale comment in `todos.route.js` still claims the opposite
-  — the code is what counts.
+  and can flicker. The comment in `todos.route.js` now says so explicitly.
 - **The optimistic row is inserted with `id: 'pending'`, not the clientId.**
   That is a real inconsistency in the current code — the placeholder uses a
   literal while the request uses a fresh UUID. Two rapid creates therefore
