@@ -20,18 +20,23 @@ on:
 jobs:
   mirror:
     runs-on: ubuntu-latest
-    if: ${{ secrets.MIRROR_TOKEN != '' }}
+    # `secrets` cannot be read in a job-level `if`, so the guard lives on each
+    # step via job-level env, which *can* read secrets.
+    env:
+      MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
     strategy:
       fail-fast: false
       matrix:
         target: [hackchild-mobile, hackchild-backend]
     steps:
       - name: Check out the knowledge base
+        if: env.MIRROR_TOKEN != ''
         uses: actions/checkout@v4
         with:
           path: source
 
       - name: Check out the target repository
+        if: env.MIRROR_TOKEN != ''
         uses: actions/checkout@v4
         with:
           repository: ${{ github.repository_owner }}/${{ matrix.target }}
@@ -39,6 +44,7 @@ jobs:
           path: target
 
       - name: Copy documents and skill into the target
+        if: env.MIRROR_TOKEN != ''
         run: |
           set -euo pipefail
           cd target
@@ -90,6 +96,7 @@ jobs:
           EOF
 
       - name: Open a mirror pull request if anything changed
+        if: env.MIRROR_TOKEN != ''
         env:
           GH_TOKEN: ${{ secrets.MIRROR_TOKEN }}
         run: |
