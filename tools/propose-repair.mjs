@@ -170,10 +170,17 @@ for (const file of docs) {
     });
   }
 
-  // fingerprints now match again; the human confirms the prose still does
-  updated = updated
-    .replace(/^status:.*$/m, 'status: verified')
-    .replace(/^verified_on:.*$/m, `verified_on: ${new Date().toISOString().slice(0, 10)}`);
+  // Fingerprints now match again — but NOTHING has checked the prose yet.
+  //
+  // Marking this `verified` here would be a lie: `verified` means a human
+  // confirmed the words are still true, not that the SHAs line up. Stamping it
+  // on a fingerprint refresh alone certifies stale prose as accurate, which is
+  // strictly worse than leaving it flagged.
+  //
+  // `needs-review` is the honest state: the code moved, the fingerprints have
+  // caught up, and the sentences are unaudited. Only agent-repair (after a
+  // successful prose patch) may promote it to `verified`.
+  updated = updated.replace(/^status:.*$/m, 'status: needs-review');
 
   writeFileSync(file, updated, 'utf8');
   repairs.push({ doc: rel, moved: details });

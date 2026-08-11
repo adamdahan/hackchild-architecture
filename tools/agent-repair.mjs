@@ -159,11 +159,21 @@ for (const repair of repairs) {
     continue;
   }
 
+  // The agent has now actually read the prose against the diff, so it is
+  // entitled to promote the document — but only when it found nothing left
+  // untrue. Outstanding invalidated claims keep it flagged for a human.
+  const clean = !result.invalidated_claims?.length;
+  const promote = (text) =>
+    text
+      .replace(/^status:.*$/m, `status: ${clean ? 'verified' : 'needs-review'}`)
+      .replace(/^verified_on:.*$/m, `verified_on: ${new Date().toISOString().slice(0, 10)}`);
+
   if (result.changed) {
-    writeFileSync(repair.doc, result.updated_markdown, 'utf8');
-    console.log('patched');
+    writeFileSync(repair.doc, promote(result.updated_markdown), 'utf8');
+    console.log(clean ? 'patched → verified' : 'patched → needs-review (claims outstanding)');
   } else {
-    console.log('no prose change needed');
+    writeFileSync(repair.doc, promote(readFileSync(repair.doc, 'utf8')), 'utf8');
+    console.log('no prose change needed → verified');
   }
 
   const lines = [`### \`${repair.doc}\``, '', result.summary, ''];

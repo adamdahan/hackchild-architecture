@@ -69,6 +69,7 @@ context" — that is exactly the cost this system exists to avoid.
 |---|---|
 | `status: verified` | Fingerprints match the code. Answer normally. |
 | `status: stale` | The source code has changed since this was written. **Say so before answering**, name the affected sections, and verify any load-bearing claim against the code. |
+| `status: needs-review` | Fingerprints were refreshed but the prose is unaudited. Treat exactly as `stale`. |
 | `status: observed` | Written from one side of the stack only. Trust it about that side; treat the other as inference. |
 | `vantage` | `backend-only` cannot be relied on for mobile behaviour, and vice versa. |
 

@@ -32,6 +32,8 @@ see half the system.
    - `verified` — fingerprints match the code. Answer normally.
    - `stale` — the source code changed after this was written. **Say so before
      answering**, name the affected sections, verify load-bearing claims.
+   - `needs-review` — fingerprints were refreshed but **nobody has audited the
+     prose**. Treat exactly as `stale`.
    - `observed` — written from one side of the stack only. Treat claims about
      the other side as inference.
 

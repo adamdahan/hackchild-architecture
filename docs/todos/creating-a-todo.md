@@ -1,5 +1,5 @@
 ---
-status: verified
+status: needs-review
 vantage: cross-stack
 kind: flow
 domain: todos
@@ -34,17 +34,18 @@ What happens between typing a title and the row existing on the server.
    `/v1/todos`.
 4. `request()` attaches `x-client-locale` and `content-type` headers.
 5. The backend route trims the title, rejects empty with `422 TITLE_REQUIRED`,
-   and calls `TodoStore.create({ id: clientId, title })`.
+   and calls `TodoStore.create({ title })`. **The `clientId` the app sends is
+   ignored** — the store mints its own id.
 6. `onSettled` invalidates `['todos']`, which refetches and replaces the
    optimistic row with the persisted one.
 
 ## Gotchas
 
-- **The id is minted on the client, not the server.** `POST /v1/todos` honours
-  `clientId` verbatim. This is deliberate — it means the optimistic row and the
-  persisted row are the same record, so the list does not flicker on reconcile.
-  If you ever make the server mint ids, the optimistic update breaks silently:
-  you get a duplicate row for a moment, not an error.
+- **The id is minted on the server, and the client's `clientId` is discarded.**
+  The route parses only `title`. The optimistic row and the persisted row are
+  therefore never the same record, so the list replaces rather than reconciles
+  and can flicker. A stale comment in `todos.route.js` still claims the opposite
+  — the code is what counts.
 - **The optimistic row is inserted with `id: 'pending'`, not the clientId.**
   That is a real inconsistency in the current code — the placeholder uses a
   literal while the request uses a fresh UUID. Two rapid creates therefore
