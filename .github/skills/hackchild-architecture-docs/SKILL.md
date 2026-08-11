@@ -1,6 +1,6 @@
 ---
 name: hackchild-architecture-docs
-description: Use when the user asks about any hackchild application flow, screen behaviour, end-to-end sequence, feature implementation, or mobile/backend architecture. Triggers include questions about how a feature works, what happens when a user does X, creating or completing todos, optimistic updates, the event bus, locale handling, API contracts, and any "how does X work in the app" question. Looks up the hackchild-architecture index and fetches only the relevant document(s) — never the whole repo.
+description: Use when the user asks about any hackchild application flow, screen behaviour, end-to-end sequence, feature implementation, or mobile/backend architecture. Triggers include questions about how a feature works, what happens when a user does X, creating or completing todos, optimistic updates, the event bus, API contracts, and any "how does X work in the app" question. Greps the document manifest and opens only the matching document — never the whole repository.
 argument-hint: The feature, screen, or flow to look up (e.g. "creating a todo", "event bus", "optimistic updates")
 ---
 
@@ -8,12 +8,9 @@ argument-hint: The feature, screen, or flow to look up (e.g. "creating a todo", 
 
 ## Purpose
 
-`hackchild-architecture` is the single source of truth for how the hackchild
-stack works across `hackchild-mobile` and `hackchild-backend`. Use this skill
-whenever someone asks how something works in the app.
-
-This skill file lives inside the repo, so anyone who has the folder in their
-workspace has the skill automatically. Nothing to install.
+`docs/` holds one document per analysed feature, covering how it works across
+both the mobile app and the backend service. Use this skill whenever someone
+asks how something works.
 
 ## When to invoke
 
@@ -23,55 +20,83 @@ workspace has the skill automatically. Nothing to install.
 - "What fires when...?"
 - Any question about a specific screen, endpoint, or system behaviour
 
+---
+
 ## Lookup procedure
 
-**Do not read every file in the repo.**
+### Step 1 — Grep the manifest. Do not read it.
 
-### Step 1 — Read the index
+`index/manifest.tsv` has one tab-separated line per document:
 
-Read `README.md` at the repo root. It lists every document with its path,
-description, and key topics. Scan the key-topics column to find the match.
+```
+path  kind  domain  repos  status  title  keywords  summary
+```
 
-### Step 2 — Search if the index is unclear
+**Search it, never load it.** Reading the whole manifest costs tokens in
+proportion to how many documents exist; grepping costs the same handful of
+matching lines whether the repository holds ten documents or ten thousand. This
+is the single most important instruction in this file.
 
-Grep this repo by keyword. Only if that also fails, fall back to reading the
-source repos directly.
+```sh
+grep -i 'optimistic update' index/manifest.tsv
+grep -iE 'webhook|settlement' index/manifest.tsv
+```
+
+Match against the user's own words first. If nothing hits, try synonyms and the
+identifiers they would have used — a function name, an event name, an endpoint.
+
+Narrow with the columns when a broad term returns too much:
+
+```sh
+awk -F'\t' '$3=="payments" && $2=="flow"' index/manifest.tsv    # one domain, flows only
+awk -F'\t' '$4 ~ /mobile/'                index/manifest.tsv    # anything touching mobile
+```
+
+### Step 2 — Fall back to searching the documents themselves
+
+If the manifest gives nothing, grep `docs/` directly. A miss here is a signal
+worth surfacing: say plainly that no document covers it, because the gap is
+more useful to the team than a guess.
 
 ### Step 3 — Read only the matching document(s)
 
-Read the specific file(s) identified. Do not read unrelated documents.
+Open the file the grep pointed at. Do not read neighbouring documents "for
+context" — that is exactly the cost this system exists to avoid.
 
-### Step 4 — Check the status before answering
+### Step 4 — Check the frontmatter before answering
 
-Every document's frontmatter carries a `status`:
-
-- **`verified`** — answer normally.
-- **`stale`** — the source code has changed since the document was written.
-  Say so *before* answering, name which sections are affected, and verify any
-  load-bearing claim against the code in the source repo.
-- **`observed`** — written from one side of the stack only. Trust what it says
-  about that side; treat claims about the other side as inference and verify.
-
-Also check `vantage`. A `backend-only` document cannot be relied on for mobile
-behaviour, and vice versa.
+| Field | What it means for your answer |
+|---|---|
+| `status: verified` | Fingerprints match the code. Answer normally. |
+| `status: stale` | The source code has changed since this was written. **Say so before answering**, name the affected sections, and verify any load-bearing claim against the code. |
+| `status: observed` | Written from one side of the stack only. Trust it about that side; treat the other as inference. |
+| `vantage` | `backend-only` cannot be relied on for mobile behaviour, and vice versa. |
 
 ### Step 5 — Answer
 
 Use the document. If it does not fully answer the question, supplement with a
-targeted search in `hackchild-backend/src` or `hackchild-mobile/src` — and say
-which parts came from the document versus the code.
+targeted search in the source repositories — and say which parts came from the
+document and which from the code.
 
-## After doing new cross-repo analysis
+**Code wins.** When a document and the codebase disagree, trust the codebase,
+say so out loud, and flag the document as stale.
 
-If you had to open both repositories to answer something, and no document
+---
+
+## After doing new cross-repository analysis
+
+If you had to open both repositories to answer something and no document
 covered it, that is a gap worth filling:
 
-1. Write the document into `flows/` (cross-repo) or `mechanisms/<repo>/`
-2. Add frontmatter with `sources` and a `blob` for each — `git hash-object <file>`
-3. Include a **Gotchas** section: the things that were not derivable from the code
-4. Add the index row in `README.md`
-5. Run `node tools/build-watchers.mjs`
+1. Write the document into `docs/<domain>/<slug>.md`
+2. Add frontmatter — `kind`, `domain`, `keywords`, `status`, `vantage`,
+   `verified_on`, `verified_by`, and `sources`
+3. List **5 to 15 specific source files**. Never a directory, never a glob.
+   Watching too much makes every unrelated commit flag the document, people
+   learn to ignore the flags, and the system quietly stops working.
+4. Include a **Gotchas** section — the things that were not derivable from the
+   code. That is the part that never expires.
+5. Run `node tools/build-index.mjs` to regenerate the manifest
 
-Do **not** write a document from a single-repo vantage and file it as
-cross-stack. Set `vantage: backend-only` or `mobile-only` and `status: observed`
-so the next reader knows how far to trust it.
+Do not write a document from one repository's vantage and file it as
+cross-stack. Set `vantage` honestly and `status: observed`.

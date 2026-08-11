@@ -12,8 +12,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'flows/**'
-      - 'mechanisms/**'
+      - 'docs/**'
       - 'README.md'
       - '.github/skills/**'
   workflow_dispatch:
@@ -48,8 +47,8 @@ jobs:
           # assistant can be pointed at.
           rm -rf docs/architecture
           mkdir -p docs/architecture
-          cp -R ../source/flows        docs/architecture/
-          cp -R ../source/mechanisms   docs/architecture/
+          cp -R ../source/docs/.        docs/architecture/
+          cp    ../source/index/manifest.tsv docs/architecture/manifest.tsv
           cp    ../source/README.md    docs/architecture/README.md
 
           # The skill travels with them, so it is present on first clone.

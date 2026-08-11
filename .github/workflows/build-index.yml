@@ -1,9 +1,9 @@
-name: build-watchers
+name: build-index
 
 on:
   push:
     branches: [main]
-    paths: ['flows/**', 'mechanisms/**']
+    paths: ['docs/**']
   workflow_dispatch:
 
 permissions:
@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: 20
 
-      - run: node tools/build-watchers.mjs
+      - run: node tools/build-index.mjs
 
       - name: Commit the regenerated index
         run: |

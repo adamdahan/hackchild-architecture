@@ -1,6 +1,9 @@
 ---
 status: verified
 vantage: backend-only
+kind: mechanism
+domain: platform
+keywords: event bus, publish, register, canHandle, handler, microtask, silently dropped, adding a handler
 verified_on: 2026-08-11
 verified_by: adamdahan
 sources:

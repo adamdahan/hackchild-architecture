@@ -50,8 +50,8 @@ jobs:
           git config user.email "bot@users.noreply.github.com"
           git checkout -b "$BRANCH"
 
-          node tools/build-watchers.mjs
-          git add flows mechanisms index
+          node tools/build-index.mjs
+          git add docs index
           git commit -m "docs: refresh fingerprints after source changes"
           git push -u origin "$BRANCH"
 

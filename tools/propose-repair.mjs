@@ -20,7 +20,7 @@ import { readdir } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { join, relative, resolve } from 'node:path';
 
-const DOC_ROOTS = ['flows', 'mechanisms'];
+const DOC_ROOT = 'docs';
 const OUT_DIR = '.repair';
 
 const owner = (() => {
@@ -79,15 +79,28 @@ async function findDocs(dir) {
   for (const e of entries) {
     const full = join(dir, e.name);
     if (e.isDirectory()) out.push(...(await findDocs(full)));
-    else if (e.name.endsWith('.md')) out.push(full);
+    else if (e.name.endsWith('.md') && e.name !== 'README.md') out.push(full);
   }
   return out;
 }
 
 // ---------------------------------------------------------------- github
 
-const currentSha = (repo, path) =>
-  gh(['api', `repos/${owner}/${repo}/contents/${path}`, '--jq', '.sha']);
+const treeCache = new Map();
+
+/** One Git Trees call per repository, cached. Keeps this O(repos), not O(files). */
+function currentSha(repo, path) {
+  if (!treeCache.has(repo)) {
+    const raw = gh(['api', `repos/${owner}/${repo}/git/trees/main?recursive=1`,
+                    '--jq', '[.tree[] | select(.type=="blob") | {path, sha}]']);
+    const map = new Map();
+    try {
+      for (const b of JSON.parse(raw ?? '[]')) map.set(b.path, b.sha);
+    } catch { /* leave empty; treated as unchanged rather than deleted */ }
+    treeCache.set(repo, map);
+  }
+  return treeCache.get(repo).get(path) ?? null;
+}
 
 /** The commit that most recently touched this path — who to ask for review. */
 function lastCommit(repo, path) {
@@ -118,7 +131,7 @@ function diffFor(repo, sha, path) {
 // ---------------------------------------------------------------- main
 
 const root = resolve(process.cwd());
-const docs = (await Promise.all(DOC_ROOTS.map((d) => findDocs(join(root, d))))).flat().sort();
+const docs = (await findDocs(join(root, DOC_ROOT))).sort();
 
 const repairs = [];
 const assignees = new Set();
