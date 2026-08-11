@@ -1,5 +1,5 @@
 ---
-status: verified
+status: stale
 vantage: backend-only
 kind: mechanism
 domain: platform

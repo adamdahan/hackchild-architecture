@@ -1,5 +1,5 @@
 ---
-status: verified
+status: stale
 vantage: cross-stack
 kind: flow
 domain: todos
