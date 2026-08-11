@@ -1,0 +1,59 @@
+name: repair-documents
+
+# When sources have moved, refresh the fingerprints and open a PR asking the
+# person who moved them to confirm the prose still holds.
+
+on:
+  schedule:
+    - cron: '32 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Work out what moved and refresh fingerprints
+        id: repair
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          node tools/propose-repair.mjs --owner ${{ github.repository_owner }}
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Open the repair pull request
+        if: steps.repair.outputs.code == '10'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          BRANCH="repair/fingerprints-${{ github.run_id }}"
+
+          git config user.name  "repair-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+
+          node tools/build-watchers.mjs
+          git add flows mechanisms index
+          git commit -m "docs: refresh fingerprints after source changes"
+          git push -u origin "$BRANCH"
+
+          ASSIGNEES=$(cat .repair/assignees.txt)
+          PR_URL=$(gh pr create \
+            --base main --head "$BRANCH" \
+            --title "Confirm documents after source changes" \
+            --body-file .repair/pr-body.md)
+
+          echo "opened $PR_URL"
+          if [ -n "$ASSIGNEES" ]; then
+            gh pr edit "$PR_URL" --add-assignee "$ASSIGNEES" || echo "could not assign $ASSIGNEES"
+          fi
