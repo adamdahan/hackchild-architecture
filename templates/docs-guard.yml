@@ -1,0 +1,30 @@
+name: docs-guard
+
+# The mirrored docs are generated. Editing them here is silently overwritten by
+# the next sync, so the author loses their work and concludes the system is
+# broken. Fail fast and point them at the right place instead.
+
+on:
+  pull_request:
+    paths: ['docs/architecture/**']
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Reject edits to generated documentation
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # The mirror bot's own PR is the one legitimate exception.
+          if [ "${{ github.actor }}" = "docs-mirror" ] || [ "${{ github.head_ref }}" = "docs/mirror" ]; then
+            echo "mirror sync — allowed"; exit 0
+          fi
+          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'docs/architecture/**')
+          [ -z "$FILES" ] && exit 0
+          echo "::error::docs/architecture/ is generated and will be overwritten by the next sync."
+          echo "$FILES" | sed 's/^/  /'
+          gh pr comment ${{ github.event.pull_request.number }} --body "$(printf '### Edit these at the source, not here\n\n`docs/architecture/` is mirrored from the architecture repository and is regenerated on every merge — changes made here are silently overwritten.\n\nFiles in this PR:\n\n```\n%s\n```\n\nOpen the change against the architecture repository instead, where the fingerprint and review machinery lives.\n' "$FILES")"
+          exit 1

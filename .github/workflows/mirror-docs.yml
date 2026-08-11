@@ -91,6 +91,21 @@ jobs:
           p.write_text(s)
           PY
 
+          # Keep the docs out of anything shippable. We APPEND to existing ignore
+          # files rather than overwriting them — these belong to the target team,
+          # and clobbering their .dockerignore would be a hostile act.
+          for f in .dockerignore .npmignore .easignore; do
+            if [ -f "$f" ] && ! grep -q '^docs/architecture' "$f"; then
+              printf '\n# mirrored architecture docs — never ship these\ndocs/architecture/\n' >> "$f"
+            fi
+          done
+          # If a Dockerfile exists but no .dockerignore does, create one; an image
+          # that silently grows because of a docs sync is exactly the failure the
+          # target team would blame on us.
+          if [ -f Dockerfile ] && [ ! -f .dockerignore ]; then
+            printf '# mirrored architecture docs — never ship these\ndocs/architecture/\n' > .dockerignore
+          fi
+
           # A note for humans browsing the folder.
           cat > docs/architecture/SYNCED-FROM.txt <<EOF
           source:  ${{ github.repository }}
@@ -131,7 +146,7 @@ jobs:
           git config user.name  "docs-mirror"
           git config user.email "bot@users.noreply.github.com"
           git checkout -B "$BRANCH"
-          git add -A docs/architecture .github/skills/architecture-docs .github/copilot-instructions.md
+          git add -A docs/architecture .github/skills/architecture-docs .github/copilot-instructions.md .dockerignore .npmignore .easignore 2>/dev/null || git add -A docs/architecture .github/skills/architecture-docs .github/copilot-instructions.md
           git commit -m "docs: sync architecture documents and skill"
           git push -f -u origin "$BRANCH"
 
