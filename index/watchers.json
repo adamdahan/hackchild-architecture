@@ -1,0 +1,24 @@
+{
+  "hackchild-backend/src/events/bus.js": [
+    "flows/completing-a-todo.md",
+    "mechanisms/backend/event-bus.md"
+  ],
+  "hackchild-backend/src/events/handlers/streak.handler.js": [
+    "flows/completing-a-todo.md",
+    "mechanisms/backend/event-bus.md"
+  ],
+  "hackchild-backend/src/routes/todos.route.js": [
+    "flows/completing-a-todo.md",
+    "flows/creating-a-todo.md"
+  ],
+  "hackchild-backend/src/store/todo.store.js": [
+    "flows/creating-a-todo.md"
+  ],
+  "hackchild-mobile/src/api/client.ts": [
+    "flows/creating-a-todo.md"
+  ],
+  "hackchild-mobile/src/features/todos/useTodos.ts": [
+    "flows/completing-a-todo.md",
+    "flows/creating-a-todo.md"
+  ]
+}
