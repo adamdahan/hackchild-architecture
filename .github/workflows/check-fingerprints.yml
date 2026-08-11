@@ -27,8 +27,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set +e
-          node tools/check-fingerprints.mjs --remote --owner ${{ github.repository_owner }} --write | tee report.txt
-          echo "exit=$?" >> "$GITHUB_OUTPUT"
+          node tools/check-fingerprints.mjs --remote --owner ${{ github.repository_owner }} --write > report.txt 2>&1
+          code=$?
+          cat report.txt
+          echo "exit=$code" >> "$GITHUB_OUTPUT"
 
       - name: Commit any status changes
         if: steps.check.outputs.exit != '0'
