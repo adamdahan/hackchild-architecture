@@ -82,3 +82,13 @@ Resolve against the code, answer once, and tell the user which clone needs a
 Say plainly that no document covers it, then answer from the code you can see —
 and be explicit that your view stops at this repository's boundary. A missing
 document is useful information for the team; a confident guess is not.
+
+Then, in one line, tell them how to fill the gap:
+
+> No document covers this yet. If you have all three repositories open in the
+> workspace, run **`/trace <feature>`** and I'll write one.
+
+Do not write the document yourself as a side effect of answering a question.
+`/trace` exists because writing one has a procedure — fingerprints, a bounded
+source list, a gotchas section the user has to be asked about — and a document
+produced without those looks identical to a real one while being unmaintainable.

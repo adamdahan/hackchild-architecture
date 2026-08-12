@@ -87,6 +87,13 @@ jobs:
           mkdir -p .github
           cp ../source/.github/copilot-instructions.md .github/copilot-instructions.md
 
+          # /trace travels too, so a developer who opens only this repo still
+          # gets told the command exists — and gets it working the moment they
+          # add the other folders to their workspace.
+          rm -rf .github/prompts
+          mkdir -p .github/prompts
+          cp ../source/.github/prompts/*.prompt.md .github/prompts/
+
           # The source skill says "the root of this repository". In the mirror
           # that is wrong — rewrite the paths to the mirrored location.
           python3 - <<'PY'
@@ -164,7 +171,7 @@ jobs:
           git config user.name  "docs-mirror"
           git config user.email "bot@users.noreply.github.com"
           git checkout -B "$BRANCH"
-          git add -A docs/architecture .github/skills/architecture-docs .github/copilot-instructions.md .dockerignore .npmignore .easignore 2>/dev/null || git add -A docs/architecture .github/skills/architecture-docs .github/copilot-instructions.md
+          git add -A docs/architecture .github/skills/architecture-docs .github/prompts .github/copilot-instructions.md .dockerignore .npmignore .easignore 2>/dev/null || git add -A docs/architecture .github/skills/architecture-docs .github/prompts .github/copilot-instructions.md
           git commit -m "docs: sync architecture documents and skill"
           git push -f -u origin "$BRANCH"
 
