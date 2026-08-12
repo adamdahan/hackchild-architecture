@@ -58,6 +58,24 @@ jobs:
           cp    ../source/index/manifest.tsv docs/architecture/manifest.tsv
           cp    ../source/README.md    docs/architecture/README.md
 
+          # At the source the README sits above `docs/`, so its links read
+          # `docs/todos/x.md`. In the mirror the README sits *inside* that
+          # folder, where the same link resolves to `docs/architecture/docs/…`
+          # and 404s. Rewrite the links to match where the file now lives.
+          python3 - <<'PY'
+          import pathlib
+          p = pathlib.Path("docs/architecture/README.md")
+          s = p.read_text()
+          s = s.replace("](docs/", "](")
+          s = s.replace("index/manifest.tsv", "manifest.tsv")
+          s = s.replace(
+              "# hackchild-architecture\n",
+              "# hackchild-architecture\n\n> **Mirrored copy — read-only.** Generated from the architecture\n> repository on every merge. Edits here are overwritten by the next sync.\n",
+              1,
+          )
+          p.write_text(s)
+          PY
+
           # The skill travels with them, so it is present on first clone.
           rm -rf .github/skills/architecture-docs
           mkdir -p .github/skills/architecture-docs
