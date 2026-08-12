@@ -16,6 +16,7 @@ on:
       - 'README.md'
       - '.github/skills/**'
       - '.github/copilot-instructions.md'
+      - '.github/prompts/**'
   workflow_dispatch:
 
 jobs:
