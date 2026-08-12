@@ -1,49 +1,73 @@
 ---
 name: trace
-description: Trace a feature across the mobile app and the backend, then write the analysis into the architecture repo.
-argument-hint: the feature to trace — e.g. "creating a todo", "the streak counter"
+description: Trace a feature across the mobile app and the backend and write it up. With no argument, traces what you just changed on your current branches.
+argument-hint: leave empty to trace what you just built, or name a feature — "creating a todo"
 agent: agent
 ---
 
-Trace **${input:feature:which feature?}** end to end and write it up.
+Trace it end to end and write it up. Every repository is open in this workspace —
+use them all. Never describe one side and guess at the other.
 
-You have every repository open in this workspace. Use them. Do not answer from
-one side and guess at the other — that is the entire failure this exists to
-prevent.
+## First: work out what you are tracing
 
-## 1. Check nobody has already done this
+**If the user named something**, trace that.
+
+**If they did not**, they mean the work they just did. Find it — check every
+repository in the workspace, not just the one that is focused:
 
 ```sh
-grep -i '<the feature, and two or three synonyms>' hackchild-architecture/index/manifest.tsv
+for r in hackchild-mobile hackchild-backend; do
+  echo "── $r ── $(git -C $r branch --show-current)"
+  git -C $r status --short
+  git -C $r diff --stat
+  git -C $r diff --stat "$(git -C $r merge-base HEAD origin/main 2>/dev/null || echo main)"...HEAD
+done
 ```
 
-If a document already covers it, **stop.** Open it, tell the user it exists, and
-offer to update it instead. Writing a second document about the same thing is
-worse than writing none — the two disagree and nobody knows which to believe.
+That covers uncommitted work, staged work, and everything on the branch since it
+left `main` — people run this mid-feature as often as after merging.
 
-## 2. Follow the actual path through the code
+**Say what you found before you start**, in one line per repo, and let them
+correct you:
 
-Start where the user touches it and follow it all the way through. For a mobile
-feature that means: the screen, the hook or client call, the HTTP request, the
-backend route, validation, the store or database, any event published, and every
-handler that reacts to it.
+> Tracing `feat/streak-freeze` — 3 files in backend, 2 in mobile. Starting from
+> `POST /todos/:id/freeze`.
 
-Read the real files. Do not infer a backend from the shape of an API call.
+If nothing has changed anywhere, say so and ask what they want traced instead of
+guessing.
 
-Note especially:
+## Then: check nobody has already written it
+
+```sh
+grep -i '<the feature, plus two or three synonyms>' hackchild-architecture/index/manifest.tsv
+```
+
+If a document already covers it, **stop and open it.** If your change made part
+of it wrong, update that part and say which sentences you changed. Two documents
+about one feature is worse than none — they disagree and nobody knows which to
+believe.
+
+## Follow the real path through the code
+
+Start where the user touches it and follow it the whole way: screen → hook or
+client call → HTTP request → route → validation → store or database → any event
+published → every handler that reacts.
+
+When working from a diff, read the **whole** file around each change, not just
+the changed lines. A three-line diff can move the meaning of a function you have
+not read.
+
+Pay attention to:
 
 - **Where the two sides disagree** — a field the client sends that the server
   ignores, an optimistic value that never matches what comes back.
-- **What is fire-and-forget** — anything where a `200` does not mean the work
-  finished.
+- **What is fire-and-forget** — anywhere a `200` does not mean the work finished.
 - **What silently does nothing** when you get it wrong.
 
-## 3. Write it to `hackchild-architecture/docs/<domain>/<slug>.md`
+## Write it to `hackchild-architecture/docs/<domain>/<slug>.md`
 
-`<domain>` is the part of the product — `todos`, `platform`, `onboarding`. Match
-an existing folder if one fits; create one if none does.
-
-Copy the shape of an existing document. Frontmatter first:
+`<domain>` is the part of the product — `todos`, `platform`, `onboarding`. Reuse
+a folder if one fits. Copy the shape of an existing document.
 
 ```yaml
 ---
@@ -53,56 +77,46 @@ status: verified
 vantage: cross-stack      # or backend-only / mobile-only
 verified_on: <today, YYYY-MM-DD>
 verified_by: <the user's github handle>
-keywords: <words someone would actually type when looking for this>
+keywords: <what someone would actually type looking for this>
 sources:
   - repo: hackchild-backend
     path: src/routes/todos.route.js
-    blob: <see below>
+    blob: <git -C hackchild-backend hash-object src/routes/todos.route.js>
 ---
 ```
 
-**`sources` must list 5 to 15 specific files. Never a folder, never a wildcard.**
-Only the files whose contents this document actually describes. Watch too much
-and every unrelated commit flags the document, people learn to ignore the flags,
-and the whole system quietly stops working.
+**5 to 15 specific files. Never a folder, never a wildcard.** Only files whose
+contents this document actually describes. Watch too much and every unrelated
+commit flags the document, people learn to ignore the flags, and the whole thing
+quietly stops working.
 
-Get each fingerprint by running, from inside that repository:
+If you traced uncommitted work, the fingerprints you record are of files that do
+not exist on `main` yet. That is fine and expected — set `status: observed` and
+say in your summary that it becomes `verified` once the code merges.
 
-```sh
-git -C hackchild-backend hash-object src/routes/todos.route.js
-```
+## The Gotchas section is the point
 
-Then the body: what the feature does, the numbered path through the code, and a
-**`## Gotchas`** section.
+Everything else can be re-derived by re-reading the code. Gotchas cannot. They
+are the reasons, the hazards, and the things that have bitten someone.
 
-## 4. The Gotchas section is the point
+Write what you actually found — a real inconsistency between the two sides, a
+value that looks safe to delete and is not, an ordering that matters. If you
+suspect something but could not confirm it, say so in those words.
 
-Everything else in the document can be re-derived by reading the code. Gotchas
-cannot. They are the reasons, the hazards, and the things that have bitten
-someone.
+**Then ask the user what bit them while they were building this, and write down
+what they say.** They know things the code does not record — that is the entire
+reason this document is worth more than the diff. Do not invent one to fill the
+section; an invented gotcha is worse than an empty one, because someone will act
+on it.
 
-Write down what you actually found — a real inconsistency between the two sides,
-a value that looks safe to remove and is not, an ordering that matters. If you
-have a suspicion you could not confirm, say so in those words rather than
-asserting it.
-
-**Ask the user whether anything has burned them here, and write down what they
-say.** They know things the code does not record. Do not invent a gotcha to fill
-the section — an invented one is worse than an empty one, because someone will
-act on it.
-
-## 5. Regenerate the index and hand it back
+## Regenerate the index and hand it back
 
 ```sh
 cd hackchild-architecture && node tools/build-index.mjs
 ```
 
-Then tell the user, briefly:
+Then tell them, briefly: the path you wrote, the files you listed and why, the
+gotchas you recorded, and that they should read it before committing — you
+traced the code, but they are the one who knows whether it is *right*.
 
-- the path you wrote
-- the files you listed as sources, and why those
-- the gotchas you recorded
-- that they should read it before committing — you traced the code, but they are
-  the one who knows whether it is *right*
-
-Do not commit or push. Leave that to them.
+Do not commit or push. That is theirs.
